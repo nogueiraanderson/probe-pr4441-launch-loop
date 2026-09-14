@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Logging wrapper for the real AWS CLI (marker for repro.sh: aws wrapper for the PR 4441 reproducer).
+# Records every run-instances invocation the launch loop makes, then runs the real CLI with the
+# endpoint pinned to the local fixture on the command line, so no environment setting can redirect
+# a request to AWS.
+set -uo pipefail
+if [[ -z "${FIXTURE_URL:-}" ]]; then
+  echo "aws wrapper: FIXTURE_URL is not set, refusing to run the real CLI" >&2
+  exit 2
+fi
+if [[ "${1:-}" == "ec2" && "${2:-}" == "run-instances" ]]; then
+  echo "run-instances $*" >> "${CALLS_LOG:?CALLS_LOG must be set}" || exit 2
+fi
+exec /opt/aws-bin/aws "$@" --endpoint-url "$FIXTURE_URL"
